@@ -1,0 +1,33 @@
+[project]
+name = "maxima-tex"
+version = "0.1.0"
+description = "Run Maxima from Python and show the result as LaTeX in Jupyter and Quarto"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Chris Dawes" }]
+requires-python = ">=3.10"
+dependencies = []
+keywords = ["maxima", "computer-algebra", "latex", "jupyter", "quarto"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Framework :: Jupyter",
+]
+
+[project.optional-dependencies]
+# maxima() returns an IPython display object; any Jupyter kernel has IPython.
+notebook = ["ipython"]
+
+[project.urls]
+Homepage = "https://github.com/cmsd2/maxima-tex"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = ["pytest", "ipython"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
