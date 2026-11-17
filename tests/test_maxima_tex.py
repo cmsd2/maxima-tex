@@ -39,6 +39,16 @@ def test_errors_raise_rather_than_return_a_stale_value():
         maxima_tex("x % 3")
 
 
+def test_matrix_is_a_plain_pmatrix():
+    # MathJax can't read the \ifx wrapper Maxima puts round matrices.
+    assert maxima_tex("matrix([1,2],[3,4])") == (
+        r"\begin{pmatrix} 1&2 \\ 3&4 \end{pmatrix}"
+    )
+    assert maxima_tex("ident(2) . x") == (
+        r"\begin{pmatrix} 1&0 \\ 0&1 \end{pmatrix} \cdot x"
+    )
+
+
 def test_display_wraps_in_display_maths():
     pytest.importorskip("IPython")
     assert maxima("1+1", lhs="y").data == "$$ y = 2 $$"

@@ -13,6 +13,7 @@ otherwise on PATH.
 """
 
 import os
+import re
 import shutil
 import subprocess
 
@@ -20,6 +21,16 @@ __all__ = ["maxima", "maxima_tex", "MaximaError"]
 __version__ = "0.1.0"
 
 _MARK = "@@maxima-tex@@"
+
+# Maxima's tex() writes a matrix so that it builds under both plain TeX and
+# LaTeX, choosing at run time with \ifx. MathJax has no \ifx and stops at the
+# unbalanced braces, so these become a plain amsmath pmatrix.
+_MATRIX_BEGIN = r"\ifx\endpmatrix\undefined\pmatrix{\else\begin{pmatrix}\fi"
+_MATRIX_END = r"\ifx\endpmatrix\undefined}\else\end{pmatrix}\fi"
+_MATRIX_TOKENS = re.compile(
+    "(" + re.escape(_MATRIX_BEGIN) + "|" + re.escape(_MATRIX_END)
+    + r"|\\cr(?![A-Za-z])\s*)"
+)
 
 
 class MaximaError(RuntimeError):
@@ -31,6 +42,31 @@ def _executable():
     if not exe:
         raise MaximaError("maxima is not on PATH; install it or set MAXIMA")
     return exe
+
+
+def _plain_matrices(tex):
+    r"""Rewrite Maxima's plain-TeX/LaTeX matrices as a pmatrix MathJax reads.
+
+    Rows end in \cr, the last one included. Inside a matrix each \cr becomes
+    \\, except the last, which is dropped. \cr outside a matrix is left alone.
+    """
+    parts = _MATRIX_TOKENS.split(tex)
+    out = []
+    depth = 0
+    for i, part in enumerate(parts):
+        if part == _MATRIX_BEGIN:
+            depth += 1
+            out.append(r"\begin{pmatrix}")
+        elif part == _MATRIX_END:
+            depth -= 1
+            out.append(r"\end{pmatrix}")
+        elif i % 2 and depth > 0:  # a \cr row end inside a matrix
+            last_row = i + 2 < len(parts) and not parts[i + 1].strip() \
+                and parts[i + 2] == _MATRIX_END
+            out.append(" " if last_row else r" \\ ")
+        else:
+            out.append(part)
+    return "".join(out)
 
 
 def maxima_tex(expr, setup="", timeout=120):
@@ -57,7 +93,7 @@ def maxima_tex(expr, setup="", timeout=120):
         raise MaximaError(f"Maxima failed on {expr!r}:\n{out.stdout}{out.stderr}")
     for line in out.stdout.splitlines():
         if line.startswith(_MARK):
-            return line[len(_MARK):].strip()
+            return _plain_matrices(line[len(_MARK):].strip())
     raise MaximaError(f"no result from Maxima for {expr!r}")
 
 

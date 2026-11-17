@@ -50,6 +50,9 @@ executable in the `MAXIMA` environment variable, then on `PATH`. On Windows,
   everything a result depends on into `setup`.
 - Use ASCII names (`lambda`, not `λ`). Maxima passes Unicode straight through
   to TeX, where it may not typeset.
+- Matrices come out as `\begin{pmatrix} 1&2 \\ 3&4 \end{pmatrix}`. Maxima's
+  own `tex()` wraps them in an `\ifx` test for plain TeX, which MathJax can't
+  read, so HTML output would show an error in place of the matrix.
 
 **Errors raise.** Maxima carries on after an error and leaves `%` holding an
 earlier result, so a naive wrapper can quietly show the wrong answer. Any
